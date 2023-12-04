@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ja">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -24,162 +24,378 @@
       border-radius: 4px;
       padding: 20px;
       text-align: center;
-      cursor: pointer;
+      /* cursor: pointer; */
+    }
+    h3 {
+      margin: 0;
+    }
+    h4 {
+      margin: 10px 0;
+      /* text-align: center; */
+    }
+    #dropzone-json {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    #downloadLink {
+      display: none;
+      /* opacity: 0.5;
+      pointer-events: none; */
     }
 
     #video-container {
       position: relative;
-      width: 90%; /* ウィンドウの80%に制限 */
-      max-width: 1280px; /* 最大幅を800pxに制限 */
+      display: none;
+      margin-top: 30px;
+      width: 95%; /* ウィンドウの80%に制限 */
+      /* max-width: 1280px; */
     }
 
     #video {
       width: 100%;
     }
 
-    #frame-counter {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
+    #data-container {
+      display: none;
+      padding: 30px 0;
+      flex-direction: row-reverse;
     }
-
-    #frame-text {
-      font-size: 2em;
-      fill: white;
-      dominant-baseline: middle;
-      text-anchor: middle;
+    
+    .edit-info {
+      margin: 0 40px;
+      line-height: 150%;
     }
 
     #button-container {
       margin-top: 10px;
+    }
+    .marker-area {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+    .markers {
+      position: absolute;
+      width: 26px;
+      height: 25px;
+      display: none;
+    }
+    .markers.team0, .markers.team1, .markers.teamNull {
+      display: block;
+    }
+    .markers > .marker-rects {
+      position: relative;
+      width: 100%;
+      height: 6px;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+    .markers.team0 > .marker-rects {
+      background-color: red;
+    }
+    .markers.team1 > .marker-rects {
+      background-color: blue;
+    }
+    .markers.teamNull > .marker-rects {
+      background-color: rgba(90, 90, 90, 0.7);
+    }
+    .markers > .marker-texts {
+      position: relative;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      margin-top: 2px;
+      text-shadow: rgba(255, 255, 255, 0.5) 0 0 4px;
+    }
+    .markers.team0 > .marker-texts {
+      color: red;
+    }
+    .markers.team1 > .marker-texts {
+      color: blue;
+    }
+    .markers.teamNull > .marker-texts {
+      color: rgba(90, 90, 90, 0.7);
+      text-shadow: none;
+    }
+    .markers.active > .marker-rects {
+      border: black solid 2px !important;
+    }
+    .markers.blank > .marker-rects {
+      border: yellow solid 1px;
+    }
+
+    .red {
+      color: red;
+      font-weight: bold;
+    }
+    .white {
+      color: blue;
+      font-weight: bold;
+    }
+    .file-name {
+      display: none;
+    }
+    .manual-controls {
+      display: inline-block;
+      margin: 10px;
+    }
+    input[type=radio], input[type=checkbox], button {
+      cursor: pointer;
+    }
+    input[type=radio]:disabled, button:disabled {
+      cursor: default;
     }
   </style>
 </head>
 <body>
 
 <div id="flex">
-  <div id=movie-selector class="dropzone" onclick="openFileSelector()">
-    <p>Click or drag & drop a video file here</p>
-    <input type="file" id="file-input" accept="video/*" style="display: none;" onchange="handleFileChange()">
-    <p id="movie-name"></p>
+  <div id="dropzone-video" class="dropzone" ondrop="video_drop_handler(event)" ondragover="dragover_handler(event)">
+    <h3>Step 1</h3>
+    <p>Click or drag & drop a <b>video</b> file here</p>
+    <input type="file" id="file-input" accept="video/*" onchange="handleFileChange()">
   </div>
-  <div id=json-selector class="dropzone" onclick="openJsonFileSelector()">
-    <p>Click or drag & drop a json file here</p>
-    <input type="file" id="file-input-json" accept="application/json" style="display: none;" onchange="handleJsonFileChange()">
-    <p id="json-name"></p>
+  <div id="dropzone-json" class="dropzone" ondrop="json_drop_handler(event)" ondragover="dragover_handler(event)">
+    <h3>Step 2</h3>
+    <p>Click or drag & drop a <b>json</b> file here</p>
+    <input type="file" id="file-input-json" accept="application/json" onchange="handleJsonFileChange()">
   </div>
-  <a href="#" id="downloadLink">
+  <div class="dropzone file-name"></div>
+  <div class="dropzone file-name"></div>
+  <a href="#" download="integration.json" id="downloadLink">
     <div class="dropzone" >
-      <p>Save</p>
+      <p>Export json</p>
     </div>
   </a>
 </div>
 
-<div id="video-container" style="display: none; margin-top: 30px;">
+<div id="video-container">
   <video id="video" controls></video>
-  <svg id="frame-counter">
-    <text id="frame-text"></text>
-    <g stroke="black" fill="none">
-      <rect id='field' x="0" y="0" width="200" height="200" ></rect>
-      <rect id="p00" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p01" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p02" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p03" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p04" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p05" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p06" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p07" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p08" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p09" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p10" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p11" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p12" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p13" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p14" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p15" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p16" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p17" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p18" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p19" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p20" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p21" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p22" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p23" x="0" y="0" width="10" height="10" ></rect>
-      <rect id="p24" x="0" y="0" width="10" height="10" ></rect>  
-    </g>
-  </svg>
+  <ul class="marker-area">
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+    <li class="markers">
+      <div class="marker-rects"></div>
+      <div class="marker-texts"></div>
+    </li>
+  </ul>
+
 </div>
-<div id="button-container" style="display: none;">
+<!-- <div id="button-container" style="display: none;">
   <button onclick="handlePlayPause()">Play/Pause</button>
   <button onclick="handleFrameBackward()">Previous Frame</button>
   <button onclick="handleFrameForward()">Next Frame</button>
-</div>
-<div id="data-container" style="margin-top: 30px;">
-  <div id="frame-count"></div>
-  <div id="-object-id"></div>
-  <label for="object-id">Object ID:</label>
-  <input type="text" id="object-id" name="object-id"
-    onchange="handleSetObjectId(this.value)">
-  <div id="-team-id"></div>
-  <label for="team-id">Team:</label>
-  <input type="text" id="team-id" name="team-id"
-    onchange="handleSetTeamId(this.value)">
-  <div id="f_x"></div>
-  <div id="f_y"></div>
-  <div id="k_x"></div>
-  <div id="k_y"></div>
-  <div id="k_w"></div>
-  <div id="k_h"></div>
+</div> -->
+<div id="data-container">
+  <div class="edit-info">
+    <h4>フレーム制御</h4>
+    Status: <span id="frame-count"></span>
+    <br>
+    <button class="manual-controls" onclick="handleFrameBackward()" disabled>Back</button>
+    <button class="manual-controls" onclick="handleFrameForward()">Next</button>
+  </div>
+  <div class="edit-info">
+    <h4>選択中プレイヤー情報</h4>
+    Frame: <span id="selected-frame"></span>
+    <br>
+    Detection ID: <span id="object-id"></span>
+    <br>
+    <span>Team ID: </span>
+    <input type="radio" id="team-id-0" name="team-id" value="0" onchange="handleSetTeamId(this.value)">
+    <label for="team-id-0" class="red">0</label>
+    <input type="radio" id="team-id-1" name="team-id" value="1" onchange="handleSetTeamId(this.value)">
+    <label for="team-id-0" class="white">1</label>
+    <input type="radio" id="team-id-null" name="team-id" value="-1" onchange="handleSetTeamId(this.value)">
+    <label for="team-id-null">Other</label>
+    <br>
+    <label for="player-num">Number:</label>
+    <input type="text" id="player-num" name="player-num" onchange="handleSetPlayerNum(this.value)">
+  </div>
+  <div class="edit-info">
+    <h4>背番号の無いプレイヤー数</h4>
+    Team-0: &emsp;<span class="no-number-count red"></span> / <span class="players-count"></span>
+    <br>
+    Team-1: &emsp;<span class="no-number-count white"></span> / <span class="players-count"></span>
+    <br>
+    Other: &emsp;<span class="players-count"></span>
+  </div>
+  <div class="edit-info">
+    <h4>自動停止モード</h4>
+    <input type="checkbox" id="auto-pause" name="auto-pause" onchange="handleSetAutoPause1()">
+    <label for="auto-pause">背番号の無いプレイヤーが存在する時に停止</label><br>
+    <input type="checkbox" id="auto-pause-2" name="auto-pause-2" onchange="handleSetAutoPause2()">
+    <label for="auto-pause">チーム人数が11人未満の時に停止</label>
+  </div>
 </div>
 
 <script>
   let video;
-  let frameCounter;
-  let frameText;
   let currentFrame = 0;
   let isPlaying = false;
+  let autoPause1 = false;
+  let autoPause2 = false;
+  const fileInput = document.getElementById('file-input');
+  const jsonFileInput = document.getElementById('file-input-json');
+  const videoContainer = document.getElementById('video-container');
+  const dropzoneJson = document.getElementById('dropzone-json');
+  const dropzoneVideo = document.getElementById('dropzone-video');
+  const fileNameElement = document.getElementsByClassName('file-name');
+  const downloadLink = document.getElementById('downloadLink');
+  const manualBtn = document.getElementsByClassName('manual-controls');
 
-  function openFileSelector() {
-    document.getElementById('file-input').click();
+  function dragover_handler(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+  }
+
+  function video_drop_handler(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    fileInput.files = e.dataTransfer.files;
+    console.log('video drop');
+    handleFileChange();
+  }
+
+  function json_drop_handler(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    jsonFileInput.files = e.dataTransfer.files;
+    console.log('json drop');
+    handleJsonFileChange();
   }
 
   function handleFileChange() {
-    const fileInput = document.getElementById('file-input');
-    const videoContainer = document.getElementById('video-container');
-    const videoElement = document.getElementById('video');;
-    const frameCounterElement = document.getElementById('frame-counter');
-    const frameTextElement = document.getElementById('frame-text');
+    const videoElement = document.getElementById('video');
 
     const file = fileInput.files[0];
 
     if (file) {
-      videoContainer.style.display = 'block';
+      fileNameElement[0].innerHTML = `<p>video: ${file.name}</p>`;
+      console.log("input");
+      // videoContainer.style.display = 'block';
 
       video = new VideoPlayer(videoElement, file);
+      dropzoneJson.style.opacity = '1';
+      dropzoneJson.style.pointerEvents = 'auto';
       video.onPlay(handlePlay);
       video.onPause(handlePause);
-
-      frameCounter = frameCounterElement;
-      frameText = frameTextElement;
-
-      document.getElementById('movie-name').innerHTML = file.name;
+      video.onEnded(videoEnded);
 
       updateFrameText();
 
       // キーボードのイベントリスナーを設定
-      document.addEventListener('keydown', handleKeyPress);
+      // document.addEventListener('keydown', handleKeyPress);
     }
   }
 
-  document.getElementById('downloadLink').addEventListener('click', function() {
+  downloadLink.addEventListener('click', function() {
     // const result = openJsonFileDownloader();
     console.log('download');
-    const fileContent = JSON.stringify(video.jsonData);
+    const fileContent = JSON.stringify(video.jsonData, null, '  ');
+    // console.log(fileContent)
     const blob = new Blob([fileContent], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
+    console.log(url);
 
     const currentDate = new Date();
     const year = currentDate.getFullYear();
@@ -190,44 +406,30 @@
 
     this.href = url;
     this.download = `${year}${month}${day}_${hours}${minutes}-integration.json`;
+    // console.log(this);
   });
 
-  function openJsonFileDownloader() {
-    console.log('download');
-    const fileContent = JSON.stringify(video.jsonData);
-    const blob = new Blob([fileContent], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    // file名作成
-    const currentDate = new Date();
-    const year = currentDate.getFullYear();
-    const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // 月は0から始まるため+1が必要
-    const day = String(currentDate.getDate()).padStart(2, '0');
-    const hours = String(currentDate.getHours()).padStart(2, '0');
-    const minutes = String(currentDate.getMinutes()).padStart(2, '0');
-    
-    return [url, `${year}${month}${day}_${hours}${minutes}-integration.json`];
-  }
-
-  function openJsonFileSelector() {
-    document.getElementById('file-input-json').click();
-  }
-
   function handleJsonFileChange() {
-    const fileInput = document.getElementById('file-input-json');
-
-    const file = fileInput.files[0];
+    const file = jsonFileInput.files[0];
+    console.log('json input')
 
     if (file) {
       if (file.type === 'application/json') {
+        fileNameElement[1].innerHTML = `<p>json: ${file.name}</p>`;
         // Read the JSON file
         const reader = new FileReader();
         reader.onload = function (e) {
           const jsonContent = e.target.result;
           handleJSONContent(jsonContent, file);
-          document.getElementById('json-name').innerHTML = file.name;
         };
         reader.readAsText(file);
+        videoContainer.style.display = 'block';
+        dropzoneVideo.style.display = 'none';
+        dropzoneJson.style.display = 'none';
+        fileNameElement[0].style.display = 'block';
+        fileNameElement[1].style.display = 'block';
+        downloadLink.style.display = 'block';
+        document.getElementById('data-container').style.display = 'flex';
       }
     }
   }
@@ -252,134 +454,246 @@
 
   function handlePlay() {
     isPlaying = true;
+    manualBtn[0].disabled = true;
+    manualBtn[1].disabled = true;
   }
 
   function handlePause() {
     isPlaying = false;
     currentFrame = video.currentTime * video.fps;
-    updateFrameText();
+    manualBtn[0].disabled = false;
+    manualBtn[1].disabled = false;
+    // updateFrameText();
   }
 
-  function handleKeyPress(event) {
-    // 右矢印キーで次のフレーム
-    if (event.key === 'ArrowRight') {
-      handleFrameForward();
-    }
-    // 左矢印キーで前のフレーム
-    else if (event.key === 'ArrowLeft') {
-      handleFrameBackward();
-    }
-    else if (event.key === 'ArrowUp') {
-      handlePlayerForward();
-    }
-    else if (event.key === 'ArrowDown') {
-      handlePlayerBackward();
-    }
-  }
+  // function handleKeyPress(event) {
+  //   // 右矢印キーで次のフレーム
+  //   if (event.key === 'ArrowRight') {
+  //     handleFrameForward();
+  //   }
+  //   // 左矢印キーで前のフレーム
+  //   else if (event.key === 'ArrowLeft') {
+  //     handleFrameBackward();
+  //   }
+  // }
 
   function handleFrameForward() {
-    currentFrame += 1;
-    video.seek(currentFrame / video.fps);
-    updateFrameText();
+    // currentFrame += 1;
+    // video.seek(currentFrame / video.fps);
+    // updateFrameText();
+    video.lastFrameIndex++;
+    video.seek(video.lastFrameIndex / video.fps);
+    if (video.lastFrameIndex > 0) {
+      manualBtn[0].disabled = false;
+    }
   }
 
   function handleFrameBackward() {
-    currentFrame = Math.max(currentFrame - 1, 0);
-    video.seek(currentFrame / video.fps);
-    updateFrameText();
+    // currentFrame = Math.max(currentFrame - 1, 0);
+    // video.seek(currentFrame / video.fps);
+    // updateFrameText();
+    video.lastFrameIndex--;
+    video.seek(video.lastFrameIndex / video.fps);
+    if (video.lastFrameIndex == 0) {
+      manualBtn[0].disabled = true;
+    }
   }
 
-  function handlePlayerForward() {
-    console.log('player forward')
-    video.playerIndex--;
-    updateFrameText();
+  function handleSetAutoPause1() {
+    autoPause1 = !autoPause1;
+    console.log(autoPause1);
   }
 
-  function handlePlayerBackward() {
-    console.log('player backward')
-    video.playerIndex++;
-    updateFrameText();
+  function handleSetAutoPause2() {
+    autoPause2 = !autoPause2;
+    console.log(autoPause2);
   }
 
-  function handleSetObjectId(value) {
-    const f = video.jsonData.frames[video.lastFrameIndex];
-    const p = f.players[video.lastPlayerIndex];
+  function videoEnded() {
+    manualBtn[0].disabled = false;
+    manualBtn[1].disabled = true;
+  }
+
+  const selectedFrameTextElement = document.getElementById('selected-frame');
+  const frameCountTextElement = document.getElementById('frame-count');
+  const objectIdTextElement = document.getElementById('object-id');
+  const teamId0RadioElement = document.getElementById('team-id-0');
+  const teamId1RadioElement = document.getElementById('team-id-1');
+  const teamIdNullRadioElement = document.getElementById('team-id-null');
+  const playerNumTextElement = document.getElementById('player-num');
+
+  const noNumCounts = document.getElementsByClassName('no-number-count');
+  const playersCount = document.getElementsByClassName('players-count');
+  const markers = document.getElementsByClassName('markers');
+
+  function handleSetPlayerNum(value) {
+    const p = video.jsonData.frames[video.lastFrameIndex].players.find(x => `${x.team_id}-${x.object_id}` == video.playerIndex);
     console.log(p);
-    p.player_id = Number(value);
+    p.number = Number(value);
     console.log(p);
+    markers[video.activeElmentIdx].children[1].innerText = value;
+    video.playerIndex = null;
   }
 
   function handleSetTeamId(value) {
-    const f = video.jsonData.frames[video.lastFrameIndex];
-    const p = f.players[video.lastPlayerIndex];
+    console.log(value);
+    const p = video.jsonData.frames[video.lastFrameIndex].players.find(x => `${x.team_id}-${x.object_id}` == video.playerIndex);
     console.log(p);
-    p.team_id = Number(value);
+    p.new_team_id = Number(value);
     console.log(p);
+    if (Number(value) == 1) {
+      markers[video.activeElmentIdx].classList.add('team1');
+      markers[video.activeElmentIdx].classList.remove('team0', 'teamNull', 'blank');
+    } else if ((Number(value) == 0)) {
+      markers[video.activeElmentIdx].classList.add('team0');
+      markers[video.activeElmentIdx].classList.remove('team1', 'teamNull', 'blank');
+    } else {
+      markers[video.activeElmentIdx].classList.add('teamNull');
+      markers[video.activeElmentIdx].classList.remove('team0', 'team1', 'blank');
+    }
+    video.playerIndex = null;
   }
-
-  const dataContainerElement = document.getElementById('data-container');
-  const frameCountTextElement = document.getElementById('frame-count');
-  const objectIdTextElement = document.getElementById('object-id');
-  const teamIdTextElement = document.getElementById('team-id');
-  const FXTextElement = document.getElementById('f_x');
-  const FYTextElement = document.getElementById('f_y');
-  const KXTextElement = document.getElementById('k_x');
-  const KYTextElement = document.getElementById('k_y');
-  const KWTextElement = document.getElementById('k_w');
-  const KHTextElement = document.getElementById('k_h');
-  const PlayerRectElement = document.getElementById('player-rect');
-
 
   function updateFrameText() {
     currentFrame = video.currentTime * video.fps;
-    frameText.innerHTML = Math.round(currentFrame);
     if (video.jsonData != null) {
-      const frameIndex = Math.floor(currentFrame);
-      if (frameIndex == video.lastFrameIndex 
-        && video.lastPlayerIndex == video.playerIndex) {
-        return;
+      let frameIndex = Math.abs(video.lastFrameIndex - currentFrame) <= 1 ? video.lastFrameIndex : Math.floor(currentFrame);
+
+      if (frameIndex > video.jsonData.frames.length - 1) {
+        frameIndex = video.jsonData.frames.length - 1;
+        // downloadLink.style.opacity = '1';
+        // downloadLink.style.pointerEvents = 'auto';
       }
       
       const frame = video.jsonData.frames[frameIndex];
-      // playerIndex のチェック
-      if (video.playerIndex < 0) {
-        video.playerIndex = frame.players.length - 1;
-      }
-      if (video.playerIndex >= frame.players.length) {
-        video.playerIndex = 0;
-      }
+      let noNumCounter0 = 0;
+      let noNumCounter1 = 0;
+      let team0Count = 0;
+      let team1Count = 0;
+      let teamNullCount = 0;
 
-      console.log(video.playerIndex);
+      for (let i = 0; i < markers.length; i++) {
+        if (i < frame.players.length) {
+          // ボールの場合はスキップ
+          if (frame.players[i].team_id == 6) {
+            markers[i].classList.remove('team0', 'team1', 'teamNull', 'active', 'blank');
+            continue;
+          }
+          
+          // 前のフレームの変更点反映
+          const id = `${frame.players[i].team_id}-${frame.players[i].object_id}`;
+          if (frameIndex > 0) {
+            const p = video.jsonData.frames[frameIndex - 1].players.find(x => `${x.team_id}-${x.object_id}` == id);
+            let fw_p;
+            if ( frameIndex !== video.jsonData.frames.length - 1) {
+              fw_p = video.jsonData.frames[frameIndex + 1].players.find(x => `${x.team_id}-${x.object_id}` == id);
+            }
 
-      const player = frame.players[video.playerIndex];
-      objectIdTextElement.value = player.player_id;
-      teamIdTextElement.value = player.team_id;
-      FXTextElement.innerHTML = player.fukan.x;
-      FYTextElement.innerHTML = player.fukan.y;
-      KXTextElement.innerHTML = player.kankyaku.x;
-      KYTextElement.innerHTML = player.kankyaku.y;
-      KWTextElement.innerHTML = player.kankyaku.w;
-      KHTextElement.innerHTML = player.kankyaku.h;
-
-
-      frame.players.forEach((player, i) => {
-        const player_id = 'p' + ('0' + i).slice(-2);
-        const playerRect = document.getElementById(player_id);
-        playerRect.setAttribute('x', player.xy[0] - player.kankyaku.w / 2);
-        playerRect.setAttribute('y', player.xy[1]);
-        playerRect.setAttribute('width', 40);
-        playerRect.setAttribute('height', 10);
-        let fill = player.team_id == 0? 'red': 'white';
-        if (i == video.playerIndex) {
-          fill = 'blue';
+            if (p?.number && !frame.players[i].number) {
+              frame.players[i].number = p.number;
+              if (fw_p?.number) {
+                delete(fw_p.number);
+              }
+            } else if (p?.number && p.number !== frame.players[i].number && fw_p?.number && fw_p.number !== frame.players[i].number) {
+              // 上書きの場合は次のフレームを削除
+              console.log('change');
+              delete(fw_p.number);
+            }
+            if ((p?.new_team_id || p?.new_team_id === 0) && !(frame.players[i].new_team_id || frame.players[i].new_team_id === 0)) {
+              frame.players[i].new_team_id = p.new_team_id;
+              if (fw_p?.new_team_id || fw_p?.new_team_id === 0) {
+                delete(fw_p.new_team_id);
+              }
+            } else if ((p?.new_team_id || p?.new_team_id === 0) && p.new_team_id !== frame.players[i].new_team_id
+            && (fw_p?.new_team_id || fw_p?.new_team_id === 0) && fw_p.new_team_id !== frame.players[i].new_team_id) {
+              // 上書きの場合は次のフレームを削除
+              console.log('change');
+              delete(fw_p.new_team_id);
+            }
+          }
+          // マーカー描画
+          const foot = [
+            frame.players[i].kankyaku.x + frame.players[i].kankyaku.w / 2,
+            frame.players[i].kankyaku.y + frame.players[i].kankyaku.h
+          ];
+          const xy = resize(foot, [video.element.clientWidth, video.element.clientHeight], input_video_size);
+          const teamID = (frame.players[i].new_team_id || frame.players[i].new_team_id === 0) ? frame.players[i].new_team_id : frame.players[i].team_id;
+          if (teamID == 0) {
+            markers[i].classList.add('team0');
+            markers[i].classList.remove('team1', 'teamNull', 'blank');
+            team0Count++;
+          } else if (teamID == 1) {
+            markers[i].classList.add('team1');
+            markers[i].classList.remove('team0', 'teamNull', 'blank');
+            team1Count++;
+          } else {
+            markers[i].classList.add('teamNull');
+            markers[i].classList.remove('team0', 'team1', 'blank');
+            teamNullCount++;
+          }
+          markers[i].style.left = xy[0] - 13 + 'px';
+          markers[i].style.top = xy[1] + 'px';
+          markers[i].children[1].textContent = frame.players[i].number || '';
+          // player選択
+          markers[i].children[0].addEventListener('click', () => {
+            video.playerIndex = id;
+            selectedFrameTextElement.innerText = frameIndex;
+            teamId0RadioElement.disabled = false;
+            teamId1RadioElement.disabled = false;
+            teamIdNullRadioElement.disabled = false;
+            playerNumTextElement.disabled = false;
+            objectIdTextElement.innerText = frame.players[i].object_id;
+            teamId0RadioElement.checked = teamID == 0;
+            teamId1RadioElement.checked = teamID == 1;
+            teamIdNullRadioElement.checked = teamID == -1;
+            playerNumTextElement.value = frame.players[i].number || '';
+            playerNumTextElement.focus();
+          })
+          if (!frame.players[i].number) {
+            frame.players[i].number = '';
+            if (teamID == 0) {
+              markers[i].classList.add('blank');
+              noNumCounter0++;
+            } else if (teamID == 1) {
+              markers[i].classList.add('blank');
+              noNumCounter1++;
+            }
+          }
+          if ((frame.players[i].new_team_id === undefined)) {
+            frame.players[i].new_team_id = '';
+          }
+          if (id == video.playerIndex) {
+            markers[i].classList.add('active');
+            video.activeElmentIdx = i;
+            selectedFrameTextElement.innerText = frameIndex;
+          } else {
+            markers[i].classList.remove('active');
+          }
+        } else {
+          markers[i].classList.remove('team0', 'team1', 'teamNull', 'active', 'blank');
         }
-        playerRect.setAttribute('fill', fill);
-        playerRect.innerHTML = player.player_id;
-      });
-      frameCountTextElement.innerHTML = Math.floor(currentFrame) + '/' + frame.index;
+      }
+      if (document.getElementsByClassName('active').length == 0) {
+        teamId0RadioElement.disabled = true;
+        teamId1RadioElement.disabled = true;
+        teamIdNullRadioElement.disabled = true;
+        playerNumTextElement.disabled = true;
+        
+      }
 
+      noNumCounts[0].innerText = noNumCounter0;
+      noNumCounts[1].innerText = noNumCounter1;
+      playersCount[0].innerText = team0Count;
+      playersCount[1].innerText = team1Count;
+      playersCount[2].innerText = teamNullCount ? `- / ${teamNullCount}` : '';
+
+      frameCountTextElement.innerText = `${frameIndex} / ${video.jsonData.frames.length - 1}`;
+      // オートストップ判定
+      if ((autoPause1 && (noNumCounter0 > 0 || noNumCounter1 > 0)) || (autoPause2 && (team0Count < 11 || team1Count < 11))) {
+        video.pause();
+        video.seek(frameIndex / video.fps);
+      }
       // last情報更新
-      video.lastPlayerIndex = video.playerIndex;
       video.lastFrameIndex = frameIndex;
     }
   }
@@ -391,7 +705,10 @@
       this.currentTime = 0;
       this.jsonFile = null;
       this.jsonData = null;
-      this.playerIndex = 0;
+      this.playerIndex = null;
+      this.activeElmentIdx = null;
+      this.lastFrameIndex = 0;
+      // this.frameIndex = 0;
       this.fps = 30; // Change this value based on the actual frames per second of your video.
       this.init();
     }
@@ -407,15 +724,6 @@
         console.log(this.element.clientHeight);
         console.log(this.element.videoWidth);
         console.log(this.element.videoHeight);
-        frameCounter.setAttribute('viewBox', '0 0 ' + this.element.videoWidth + ' ' + this.element.videoHeight);
-        //frameCounter.setAttribute('viewBox', '0 0 ' + this.element.clientWidth + ' ' + this.element.clientHeight);
-        //frameCounter.setAttribute('width', this.element.videoWidth);
-        //frameCounter.setAttribute('height', this.element.videoHeight);
-        //frameCounter.setAttribute('width', this.element.clientWidth);
-        frameCounter.setAttribute('height', this.element.clientHeight);
-        document.getElementById('field').setAttribute('width', this.element.videoWidth)
-        document.getElementById('field').setAttribute('height', this.element.videoHeight);
-        console.log(frameCounter.viewBox);
 
       });
       if (this.animeFrameHandler != undefined) {
@@ -447,6 +755,10 @@
       this.element.addEventListener('pause', callback);
     }
 
+    onEnded(callback) {
+      this.element.addEventListener('ended', callback);
+    }
+
     get currentTime() {
       return this.element.currentTime;
     }
@@ -467,18 +779,6 @@
       this.jsonFile = file;
       this.jsonData = jsonData;
 
-      this.jsonData.frames.forEach((frame, i) => {
-        if (i % 100 == 0 ) {
-          console.log('frame: ' + i)
-        }
-        frame.players.forEach((player) => {
-          const foot = [
-            player.kankyaku.x + player.kankyaku.w / 2,
-            player.kankyaku.y + player.kankyaku.h
-          ];
-          player.xy = resize(foot, upper_size, input_video_size);
-        })
-      });
       updateFrameText();
     }
   }
